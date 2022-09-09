@@ -40,7 +40,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Database\main.db" />
-    <Content Include="gitignore.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Database\" />

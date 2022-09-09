@@ -1,3 +1,4 @@
+from logging import disable
 import discord
 from discord import app_commands
 from discord import interactions
@@ -50,8 +51,12 @@ async def self(interaction:discord.Interaction, name:str = "", content:str = "",
         quote_list = []
         try:
             quote = db.GetQuoteBy("content", content.lower())
-            for quotes in quote:
-                quote_list.append(quotes)
+            if quote:
+                for quotes in quote:
+                    quote_list.append(quotes)
+
+            else:
+                await interaction.response.send_message("Quote successfully created!")
 
         except Exception as e:
             print(e)
@@ -69,9 +74,12 @@ async def self(interaction:discord.Interaction, name:str = "", content:str = "",
         quote_list = []
         try:
             quote = db.GetQuoteBy("uid", author.id)
-            for quotes in quote:
-                quote_list.append(quotes)
+            if quote:
+                for quotes in quote:
+                    quote_list.append(quotes)
 
+            else:
+                await interaction.response.send_message("Could not find a quote matching that.")
         except Exception as e:
             print(e)
             await interaction.response.send_message(f"Could not find a quote matching that.")
@@ -84,14 +92,17 @@ async def self(interaction:discord.Interaction, name:str = "", content:str = "",
 async def self(interaction:discord.Interaction, name:str, content:str):
     db = Database.instance()
     try:
-        db.CreateQuote(interaction.user.id, name.lower(), content)
+        created = db.CreateQuote(interaction.user.id, name.lower(), content)
+
+        if created:
+            await interaction.response.send_message("Quote successfully created!")
+        else:
+            await interaction.response.send_message("Could not create that quote, you may be blacklisted.")
 
     except Exception as e:
         print(e)
         await interaction.response.send_message("Quote could not successfully be created.")
         return
-
-    await interaction.response.send_message("Quote successfully created!")
 
 @tree.command(name="remove-quote", description="Remove a quote", guild=discord.Object(id = serverID))
 @app_commands.default_permissions(administrator = True)
@@ -124,5 +135,32 @@ async def self(interaction:discord.Interaction, name:str = "", content:str = "",
             return
 
         await interaction.response.send_message(f"Successfully removed the quote.")
+
+@tree.command(name="blacklist-user", description="Blacklist an user from using me.", guild=discord.Object(id = serverID))
+@app_commands.default_permissions(administrator = True)
+async def self(interaction:discord.Interaction, user:discord.User):
+    db = Database.instance()
+    try:
+        db.AddBlacklist(user.id, interaction.user.id)
+
+    except Exception as e:
+        print(e)
+        await interaction.response.send_message(f"Could not blacklist that user.")
+        return
+
+    await interaction.response.send_message(f"Blacklisted the user.")
+
+@tree.command(name="unblacklist-user", description="Remove a blacklisted user.", guild=discord.Object(id = serverID))
+@app_commands.default_permissions(administrator = True)
+async def self(interaction:discord.Interaction, user:discord.User):
+    db = Database.instance()
+    try:
+        db.RemoveBlacklist(user.id)
+    except Exception as e:
+        print(e)
+        await interaction.response.send_message(f"Could not unblacklist that user.")
+        return
+
+    await interaction.response.send_message(f"Unblacklisted the user.")
 
 client.run(TOKEN)
