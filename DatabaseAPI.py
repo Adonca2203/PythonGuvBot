@@ -1,6 +1,4 @@
-from os import remove
 import sqlite3
-from typing import final
 
 path_to_db = "Database\main.db"
 
@@ -125,7 +123,7 @@ class Database(object):
             cur.execute(validationQuery)
             isBlacklisted = cur.fetchone()
             if isBlacklisted == None:
-                quoteQuery = f"INSERT INTO Quotes(Author, Name, Content) VALUES('{author}', '{name.lower()}', '{content}');"
+                quoteQuery = f'INSERT INTO Quotes(Author, Name, Content) VALUES({author}, "{name.lower()}", "{content}");'
                 cur.execute(quoteQuery)
                 conn.commit()
                 quoteCommitSuccess = True

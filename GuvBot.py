@@ -1,9 +1,7 @@
-from logging import disable
 import discord
 from discord import app_commands
-from discord import interactions
-from discord.app_commands.models import AppCommand, AppCommandPermissions
-from SECRET import DEV_SERVER_ID, PROD_SERVER_ID, TOKEN
+from discord.embeds import Embed
+from SECRET import DEV_SERVER_ID, PROD_SERVER_ID, TOKEN, EMOTE_CALLING_CARD
 from DatabaseAPI import Database
 
 #CHANGE DEBUG WHEN READY TO DEPLOY
@@ -30,6 +28,10 @@ class aclient(discord.Client):
 client = aclient()
 tree = app_commands.CommandTree(client)
 
+async def BuildMessage(name:str, content:str) -> discord.Embed:
+    embed = discord.Embed(title=name.capitalize(), description=content.capitalize()+" "+EMOTE_CALLING_CARD, color=0xC0C738)
+    return embed
+
 @tree.command(name="quote", description="Call upon already created quotes", guild=discord.Object(id = serverID))
 async def self(interaction:discord.Interaction, name:str = "", content:str = "", author:discord.User = None):
     db = Database.instance()
@@ -42,8 +44,9 @@ async def self(interaction:discord.Interaction, name:str = "", content:str = "",
             await interaction.response.send_message(f"Could not find a quote matching that.")
             return
 
-        if quote != None:
-            await interaction.response.send_message(f"{quote.name}\n{quote.content}")
+        if quote:
+            message = await BuildMessage(quote.name, quote.content)
+            await interaction.response.send_message(embed=message)
         else:
             await interaction.response.send_message(f"Could not find a quote matching that.")
 
@@ -63,9 +66,10 @@ async def self(interaction:discord.Interaction, name:str = "", content:str = "",
             await interaction.response.send_message(f"Could not find a quote matching that.")
             return
 
-        if quote != None:
-            for quote in quote_list:
-                await interaction.response.send_message(f"{quote.name}\n{quote.content}")
+        if quote:
+            for quoteVal in quote_list:
+                message = await BuildMessage(quoteVal.name, quoteVal.content)
+                await interaction.response.send_message(embed=message)
 
         else:
             await interaction.response.send_message(f"Could not find a quote matching that.")
@@ -85,8 +89,10 @@ async def self(interaction:discord.Interaction, name:str = "", content:str = "",
             await interaction.response.send_message(f"Could not find a quote matching that.")
             return
         
-        for quote in quote_list:
-            await interaction.response.send_message(f"{quote.name}\n{quote.content}")
+        if quote:
+            for quoteVal in quote_list:
+                message = await BuildMessage(quoteVal.name, quoteVal.content)
+                await interaction.response.send_message(embed=message)
 
 @tree.command(name="create-quote", description="Add a new quote", guild=discord.Object(id = serverID))
 async def self(interaction:discord.Interaction, name:str, content:str):
@@ -97,7 +103,7 @@ async def self(interaction:discord.Interaction, name:str, content:str):
         if created:
             await interaction.response.send_message("Quote successfully created!")
         else:
-            await interaction.response.send_message("Could not create that quote, you may be blacklisted.")
+            await interaction.response.send_message("Could not create that quote, it may already exists or you may be blacklisted.")
 
     except Exception as e:
         print(e)
